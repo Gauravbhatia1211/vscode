@@ -1,0 +1,14 @@
+{
+  "internal_package_rules": {
+    "scopes": [
+      "@acme-org",
+      "@microsoft",
+      "@internal"
+    ],
+    "prefixes": [
+      "acme-",
+      "ms-internal-",
+      "our-company-"
+    ]
+  }
+}
