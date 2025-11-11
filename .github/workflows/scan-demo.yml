@@ -1,0 +1,32 @@
+name: 'BLH Scan Demo'
+
+on:
+  workflow_dispatch: # Allows manual triggering
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v4
+
+      - name: 'Run BLH Scanner (MISS Framework)'
+        id: blh_scan
+        uses: ./.github/actions/blh-scanner # Assumes your action is here
+        with:
+          level: 'critical'
+          report-name: 'blh_report.json'
+
+      - name: 'Upload Scan Report'
+        if: always() # Always upload, even if the scan step fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: blh-report
+          # --- THIS IS THE FIX ---
+          # This line was missing. It tells the action to upload
+          # the report file that our scan step generated.
+          path: ${{ steps.blh_scan.outputs.report-path }}
+          # --- END FIX ---

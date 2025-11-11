@@ -1,0 +1,52 @@
+# This file defines the "module" itself.
+# It tells GitHub what inputs it takes and how to run it.
+# We are changing this to a 'composite' runner, which is more robust.
+name: 'MISS Framework - BLH Scanner'
+description: 'Scans a repository for hijackable broken links based on the MISS framework.'
+author: 'Gaurav Bhatia & Raj Sharma'
+
+inputs:
+  scan-directory:
+    description: 'The directory to scan. Defaults to the root.'
+    required: false
+    default: '.'
+  report-name:
+    description: 'The name of the JSON report file.'
+    required: false
+    default: 'blh_report.json'
+  level:
+    description: "The minimum vulnerability level to report: 'warning' (all broken) or 'critical' (only hijackable)."
+    required: false
+    default: 'critical'
+
+outputs:
+  report-path:
+    description: 'The path to the generated JSON report.'
+    # We get the output from the 'id: run_scan' step below
+    value: ${{ steps.run_scan.outputs.report_path }}
+
+runs:
+  using: 'composite' # This is the change from 'docker'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      shell: bash
+      # 'github.action_path' is a special variable that points to this action's directory
+      run: pip install -r ${{ github.action_path }}/requirements.txt
+
+    - name: Run BLH Scanner
+      id: run_scan # We give this step an ID to get its outputs
+      shell: bash
+      # This run block is now much cleaner and more reliable
+      run: |
+        python ${{ github.action_path }}/scan.py \
+          --directory ${{ inputs.scan-directory }} \
+          --output ${{ inputs.report-name }} \
+          --level ${{ inputs.level }}
+
+        # This line sets the 'report-path' output for the action
+        echo "report_path=${{ inputs.report-name }}" >> $GITHUB_OUTPUT
