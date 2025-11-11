@@ -1,0 +1,43 @@
+# This file defines the "module" itself.
+# It tells GitHub what inputs it takes and how to run it.
+name: 'MISS Framework - Automated Dependency Scanner (v2)'
+description: 'Automatically scans all manifest files for Dependency Confusion vulnerabilities.'
+author: 'Gaurav Bhatia & Raj Sharma'
+
+inputs:
+  config-file:
+    description: 'Path to the scanner config file (defining internal scopes/prefixes).'
+    required: false
+    default: '.github/dependency-scanner.json' # A single config file for the whole repo
+  report-name:
+    description: 'The name of the JSON report file.'
+    required: false
+    default: 'dependency_report.json'
+
+outputs:
+  report-path:
+    description: 'The path to the generated JSON report.'
+    value: ${{ steps.run_scan.outputs.report_path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      shell: bash
+      run: pip install -r ${{ github.action_path }}/requirements.txt
+
+    - name: Run Dependency Scanner
+      id: run_scan
+      shell: bash
+      run: |
+        python ${{ github.action_path }}/scan.py \
+          --config ${{ inputs.config-file }} \
+          --output ${{ inputs.report-name }} \
+          --root-dir ${{ github.workspace }} # Tell the scanner to scan the whole repo
+
+        echo "report_path=${{ inputs.report-name }}" >> $GITHUB_OUTPUT
